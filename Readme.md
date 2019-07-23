@@ -1,7 +1,9 @@
 Requirements
 - Bash
+- jq
 - Zip
-- Terraform
-- awscli with credentials file at $HOME/.aws/credentials
+- Terraform 0.12.5
+- awscli with configured credentials
 
 Usage
+- Run deploy_cats.sh, you will be prompted to enter a version of the cats app

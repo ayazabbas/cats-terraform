@@ -1,4 +1,4 @@
-# Check for currently running Beanstalk Environments
+# Check if desired application version already exists in Beanstalk
 import boto3
 import logging
 
@@ -13,7 +13,6 @@ logger.setLevel(logging.INFO)
 #   "appVersion": "1.0.0"
 # }
 #
-
 
 def lambda_handler(event, context):
     app_name = event['appName']

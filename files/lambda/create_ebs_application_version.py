@@ -9,12 +9,11 @@ logger.setLevel(logging.INFO)
 #
 # {
 #   "appName": "streetbees-cats",
-#   "appVersion": "2.0.1",
+#   "appVersion": "1.0.0",
 #   "s3Bucket": "streetbees-deployment-bucket-858463413507",
-#   "s3Key": "cats/cats-2.0.1.zip"
+#   "s3Key": "cats/cats-1.0.0.zip"
 # }
 #
-
 
 def lambda_handler(event, context):
     app_name = event['appName']

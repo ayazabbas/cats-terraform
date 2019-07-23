@@ -1,10 +1,8 @@
-# Terminate a Beanstalk Environment
 import boto3
 import logging
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
 
 #
 # Example event format:
@@ -13,7 +11,6 @@ logger.setLevel(logging.INFO)
 #   "environmentName": "streetbees-cats-env-BH7MQ"
 # }
 #
-
 
 def lambda_handler(event, context):
     environment_name = event['environmentName']

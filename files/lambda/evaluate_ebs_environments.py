@@ -1,4 +1,4 @@
-# Check for currently running Beanstalk Environments
+# Check for currently running Beanstalk Environments and determine next required action
 import boto3
 import logging
 
@@ -33,7 +33,6 @@ def get_tag_value(ResourceTypes: list, ResourceARN, TagKey):
 # }
 #
 
-
 def lambda_handler(event, context):
     app_name = event['appName']
     app_version = event['appVersion']
@@ -66,7 +65,7 @@ def lambda_handler(event, context):
         except KeyError:
             running_version_label = None
 
-        if env_health != 'Red' or 'Grey':  # ignore envs not in operation
+        if env_health not in {'Red', 'Grey'}:  # ignore envs not in operation
             if get_tag_value(ResourceTypes=['elasticbeanstalk'], ResourceARN=env_arn, TagKey='EBS_BlueGreen') == 'green':
                 green_env_name = env_name
                 if running_version_label == None:
@@ -99,7 +98,7 @@ def lambda_handler(event, context):
             if not green_env_live:  # green env is up but application not deployed
                 # deploy desired version to green
                 event['environmentName'] = green_env_name
-                event['nextState'] = "DeployToEBSEnvironment"
+                event['nextState'] = "DeployEBSApplication"
             elif blue_env_name:
                 if desired_version_deployed_blue:
                     # Swap blue and green
@@ -109,7 +108,7 @@ def lambda_handler(event, context):
                 else:
                     # Deploy desired version to blue
                     event['environmentName'] = blue_env_name
-                    event['nextState'] = 'DeployToEBSEnvironment'
+                    event['nextState'] = 'DeployEBSApplication'
             else:
                 # Create blue environment
                 event['blueGreen'] = 'blue'

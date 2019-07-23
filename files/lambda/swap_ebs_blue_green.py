@@ -1,10 +1,10 @@
 # Swap blue & green environments with each other (changes URL and EBS_BlueGreen tag)
 import boto3
 import logging
+import time
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
 
 #
 # Example event format:
@@ -15,15 +15,26 @@ logger.setLevel(logging.INFO)
 # }
 #
 
+
 def lambda_handler(event, context):
     blue_environment_name = event['blueEnvironmentName']
     green_environment_name = event['greenEnvironmentName']
-    
+
     beanstalk_client = boto3.client('elasticbeanstalk')
+
+    # Swap blue and green environment URLs to redirect traffic to the new green environment
+    logger.info('Swapping blue & green environment URLs...')
+    response = beanstalk_client.swap_environment_cnames(
+        SourceEnvironmentName=green_environment_name,
+        DestinationEnvironmentName=blue_environment_name
+    )
+    logger.info(response)
+    # Need to wait a very short while for Environments to be in 'Ready' state
+    time.sleep(5)
 
     # Get ARNs for blue and green environments
     logger.info('Retrieving info for blue & green environments...')
-    blueGreenEnvironments = beanstalk_client.describe_environemnts(
+    blueGreenEnvironments = beanstalk_client.describe_environments(
         EnvironmentNames=[blue_environment_name, green_environment_name],
         IncludeDeleted=False
     )
@@ -56,13 +67,5 @@ def lambda_handler(event, context):
         }]
     )
 
-    # Swap blue and green environment URLs to redirect traffic to the new green environment
-    logger.info('Swapping blue & green environment URLs...')
-    response = beanstalk_client.swap_environment_cnames(
-        SourceEnvironmentName = green_environment_name,
-        DestinationEnvironmentName = blue_environment_name
-    )
-    logger.info(response)
-
-    event['environment_name'] = blue_environment_name  # pass back the new green environment to monitor readiness
+    event['environmentName'] = blue_environment_name  # pass back the new green environment to monitor readiness
     return event

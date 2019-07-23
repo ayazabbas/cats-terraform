@@ -14,8 +14,30 @@ data "template_file" "sfn_blue_green_ebs_deployment" {
   }
 }
 
-resource "aws_sfn_state_machine" "streetbees_deployment_role" {
+resource "aws_sfn_state_machine" "sfn_blue_green_ebs_deployment" {
   name       = "streetbees-state-machine-ebs-deployment"
   role_arn   = aws_iam_role.streetbees_deployment_role.arn
   definition = data.template_file.sfn_blue_green_ebs_deployment.rendered
+}
+
+data "template_file" "streetbees_cats_pipeline_input" {
+  template = "${file("files/stepfunctions/sfn_blue_green_ebs_pipeline_input.json.tmpl")}"
+
+  vars = {
+    app_name      = aws_elastic_beanstalk_application.streetbees_cats.name
+    app_version   = var.app_version
+    s3_bucket     = aws_s3_bucket.streetbees_deployment_bucket.bucket
+    s3_key        = aws_s3_bucket_object.streetbees_cats_archive.key
+    template_name = aws_elastic_beanstalk_configuration_template.streetbees_cats_configuration.name
+  }
+}
+
+resource "local_file" "streetbees_cats_pipeline_input" {
+  content  = data.template_file.streetbees_cats_pipeline_input.rendered
+  filename = "tmp/streetbees-cats-pipeline-input.json"
+}
+
+resource "local_file" "state_machine_arn" {
+  content  = aws_sfn_state_machine.sfn_blue_green_ebs_deployment.id
+  filename = "tmp/state-machine-arn.txt"
 }

@@ -1,5 +1,6 @@
 # Local state files
-terraform.tfstate.d/
+#terraform.tfstate.d/
+#*.tfstate*
 
 # provider/module directory
 .terraform/

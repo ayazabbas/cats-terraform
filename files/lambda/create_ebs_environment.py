@@ -16,7 +16,6 @@ logger.setLevel(logging.INFO)
 # }
 #
 
-
 def lambda_handler(event, context):
     app_name = event['appName']
     template_name = event['templateName']
