@@ -1,0 +1,114 @@
+{
+  "StartAt": "EvaluateEBSApplicationVersions",
+  "States": {
+    "EvaluateEBSApplicationVersions": {
+      "Type": "Task",
+      "Resource": "${evaluate_ebs_application_version_lambda}",
+      "Next": "DoesVersionExist"
+    },
+    "DoesVersionExist": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.versionExists",
+          "BooleanEquals": true,
+          "Next": "EvaluateEBSEnvironments"
+        }
+      ],
+      "Default": "CreateEBSApplicationVersion"
+    },
+    "CreateEBSApplicationVersion": {
+      "Type": "Task",
+      "Resource": "${create_ebs_application_version_lambda}",
+      "Next": "WaitForEBSApplicationVersion"
+    },
+    "WaitForEBSApplicationVersion": {
+      "Type": "Wait",
+      "Seconds": 5,
+      "Next": "CheckEBSApplicationVersionReadiness"
+    },
+    "CheckEBSApplicationVersionReadiness": {
+      "Type": "Task",
+      "Resource": "${check_ebs_application_version_readiness_lambda}",
+      "Next": "IsEBSApplicationVersionReady"
+    },
+    "IsEBSApplicationVersionReady": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.versionStatus",
+          "StringEquals": "PROCESSED",
+          "Next": "EvaluateEBSEnvironments"
+        },
+        {
+          "Variable": "$.versionStatus",
+          "StringEquals": "FAILED",
+          "Next": "ApplicationVersionFail"
+        }
+      ],
+      "Default": "WaitForEBSApplicationVersion"
+    },
+    "EvaluateEBSEnvironments": {
+      "Type": "Task",
+      "Resource": "${evaluate_ebs_environments_lambda}",
+      "Next": "DetermineEnvironmentAction"
+    },
+    "DetermineEnvironmentAction": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.nextState",
+          "StringEquals": "PipelineSuccess",
+          "Next": "PipelineSuccess"
+        },
+        {
+          "Variable": "$.nextState",
+          "StringEquals": "CreateEBSEnvironment",
+          "Next": "CreateEBSEnvironment"
+        }
+      ]
+    },
+    "CreateEBSEnvironment": {
+      "Type": "Task",
+      "Resource": "${create_ebs_environment_lambda}",
+      "Next": "WaitForEBSEnvironment"
+    },
+    "WaitForEBSEnvironmentReady": {
+      "Type": "Wait",
+      "Seconds": 20,
+      "Next": "CheckEBSEnvironmentReadiness"
+    },
+    "CheckEBSEnvironmentReadiness": {
+      "Type": "Task",
+      "Resource": "${check_ebs_environment_readiness_lambda}",
+      "Next": "IsEBSEnvironmentReady"
+    },
+    "IsEBSEnvironmentReady": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.environmentHealth",
+          "StringEquals": "Red",
+          "Next": "EnvironmentFail"
+        },
+        {
+          "Variable": "$.environmentStatus",
+          "StringEquals": "Ready",
+          "Next": "EvaluateEBSEnvironments"
+        }
+      ],
+      "Default": "WaitForEBSEnvironmentReady"
+    },
+    "ApplicationVersionFail": {
+      "Type": "Fail",
+      "Cause": "Application version ended in Failed state."
+    },
+    "EnvironmentFail": {
+      "Type": "Fail",
+      "Cause": "Failure launching environment."
+    },
+    "PipelineSuccess": {
+      "Type": "Succeed"
+    }
+  }
+}
