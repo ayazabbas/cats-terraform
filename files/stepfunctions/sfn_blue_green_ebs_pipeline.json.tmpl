@@ -65,13 +65,28 @@
           "Variable": "$.nextState",
           "StringEquals": "CreateEBSEnvironment",
           "Next": "CreateEBSEnvironment"
+        },
+        {
+          "Variable": "$.nextState",
+          "StringEquals": "TerminateEBSEnvironment",
+          "Next": "TerminateEBSEnvironment"
+        },
+        {
+          "Variable": "$.nextState",
+          "StringEquals": "DeployEBSApplication",
+          "Next": "DeployEBSApplication"
+        },
+        {
+          "Variable": "$.nextState",
+          "StringEquals": "SwapEBSBlueGreen",
+          "Next": "SwapEBSBlueGreen"
         }
       ]
     },
     "CreateEBSEnvironment": {
       "Type": "Task",
       "Resource": "${create_ebs_environment_lambda}",
-      "Next": "WaitForEBSEnvironment"
+      "Next": "WaitForEBSEnvironmentReady"
     },
     "WaitForEBSEnvironmentReady": {
       "Type": "Wait",
@@ -98,6 +113,42 @@
         }
       ],
       "Default": "WaitForEBSEnvironmentReady"
+    },
+    "TerminateEBSEnvironment": {
+      "Type": "Task",
+      "Resource": "${terminate_ebs_environment_lambda}",
+      "Next": "WaitForEBSEnvironmentTermination"
+    },
+    "WaitForEBSEnvironmentTermination": {
+      "Type": "Wait",
+      "Seconds": 20,
+      "Next": "CheckEBSEnvironmentTerminated"
+    },
+    "CheckEBSEnvironmentTerminated": {
+      "Type": "Task",
+      "Resource": "${check_ebs_environment_readiness_lambda}",
+      "Next": "IsEBSEnvironmentTerminated"
+    },
+    "IsEBSEnvironmentTerminated": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.environmentStatus",
+          "StringEquals": "Terminated",
+          "Next": "EvaluateEBSEnvironments"
+        }
+      ],
+      "Default": "WaitForEBSEnvironmentTermination"
+    },
+    "DeployEBSApplication": {
+      "Type": "Task",
+      "Resource": "${deploy_ebs_application_lambda}",
+      "Next": "CheckEBSEnvironmentReadiness"
+    },
+    "SwapEBSBlueGreen": {
+      "Type": "Task",
+      "Resource": "${swap_ebs_blue_green_lambda}",
+      "Next": "CheckEBSEnvironmentReadiness"
     },
     "ApplicationVersionFail": {
       "Type": "Fail",

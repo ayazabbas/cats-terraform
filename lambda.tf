@@ -109,3 +109,35 @@ resource "aws_lambda_function" "lambda_check_ebs_environment_readiness" {
   timeout          = 30
   source_code_hash = filebase64sha256(data.archive_file.lambda_check_ebs_environment_readiness.output_path)
 }
+
+data "archive_file" "lambda_terminate_ebs_environment" {
+  type        = "zip"
+  source_file = "files/lambda/terminate_ebs_environment.py"
+  output_path = "tmp/terminate_ebs_environment.zip"
+}
+
+resource "aws_lambda_function" "lambda_terminate_ebs_environment" {
+  function_name    = "streetbees-terminate-ebs-environment"
+  filename         = data.archive_file.lambda_terminate_ebs_environment.output_path
+  role             = aws_iam_role.streetbees_deployment_role.arn
+  handler          = "terminate_ebs_environment.lambda_handler"
+  runtime          = "python3.7"
+  timeout          = 30
+  source_code_hash = filebase64sha256(data.archive_file.lambda_terminate_ebs_environment.output_path)
+}
+
+data "archive_file" "lambda_swap_ebs_blue_green" {
+  type        = "zip"
+  source_file = "files/lambda/swap_ebs_blue_green.py"
+  output_path = "tmp/swap_ebs_blue_green.zip"
+}
+
+resource "aws_lambda_function" "lambda_swap_ebs_blue_green" {
+  function_name    = "streetbees-swap-ebs-blue-green"
+  filename         = data.archive_file.lambda_swap_ebs_blue_green.output_path
+  role             = aws_iam_role.streetbees_deployment_role.arn
+  handler          = "swap_ebs_blue_green.lambda_handler"
+  runtime          = "python3.7"
+  timeout          = 30
+  source_code_hash = filebase64sha256(data.archive_file.lambda_swap_ebs_blue_green.output_path)
+}

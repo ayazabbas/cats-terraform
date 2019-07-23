@@ -14,7 +14,6 @@ logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event, context):
-    # These runtime vars should be passed to the function in the event
     environment_name = event['environmentName']
 
     beanstalk_client = boto3.client('elasticbeanstalk')

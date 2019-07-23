@@ -16,7 +16,6 @@ logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event, context):
-    # These runtime vars should be passed to the function in the event
     app_name = event['appName']
     app_version = event['appVersion']
 

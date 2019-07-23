@@ -35,7 +35,6 @@ def get_tag_value(ResourceTypes: list, ResourceARN, TagKey):
 
 
 def lambda_handler(event, context):
-    # These runtime vars should be passed to the function in the event
     app_name = event['appName']
     app_version = event['appVersion']
 
@@ -51,8 +50,8 @@ def lambda_handler(event, context):
     environments = response['Environments']
 
     # These variables determine how to proceed
-    green_env_exists = False
-    blue_env_exists = False
+    green_env_name = None
+    blue_env_name = None
     green_env_live = True  # is any version of the app currently running and live?
     desired_version_deployed_green = False
     desired_version_deployed_blue = False
@@ -69,41 +68,54 @@ def lambda_handler(event, context):
 
         if env_health != 'Red' or 'Grey':  # ignore envs not in operation
             if get_tag_value(ResourceTypes=['elasticbeanstalk'], ResourceARN=env_arn, TagKey='EBS_BlueGreen') == 'green':
-                green_env_exists = True
+                green_env_name = env_name
                 if running_version_label == None:
                     green_env_live = False
                 logger.info('Found green environment, checking application version...')
                 desired_version_deployed_green = (running_version_label == desired_version_label)
             elif get_tag_value(ResourceTypes=['elasticbeanstalk'], ResourceARN=env_arn, TagKey='EBS_BlueGreen') == 'blue':
-                blue_env_exists = True
+                blue_env_name = env_name
                 logger.info('Found blue environment, checking application version...')
                 desired_version_deployed_blue = (running_version_label == desired_version_label)
 
-    logging.info('green_env_exists: %s' % green_env_exists)
-    logging.info('blue_env_exists: %s' % blue_env_exists)
+    logging.info('Green environment: %s' % green_env_name)
+    logging.info('Blue environment: %s' % blue_env_name)
     logging.info('green_env_live: %s' % green_env_live)
     logging.info('desired_version_deployed_green: %s' % desired_version_deployed_green)
     logging.info('desired_version_deployed_blue: %s' % desired_version_deployed_blue)
 
-    if green_env_exists:
+    if green_env_name:
         if desired_version_deployed_green:
-            if blue_env_exists:
-                event['nextState'] = 'Terminate blue env'
+            if blue_env_name:
+                # terminate blue environment
+                event['environmentName'] = blue_env_name
+                event['nextState'] = 'TerminateEBSEnvironment'
                 return event
             else:
+                # nothing to do
                 event['nextState'] = 'PipelineSuccess'
                 return event
         else:
-            if not green_env_live:
-                event['nextState'] = "Deploy desired version to green"
-            elif blue_env_exists:
+            if not green_env_live:  # green env is up but application not deployed
+                # deploy desired version to green
+                event['environmentName'] = green_env_name
+                event['nextState'] = "DeployToEBSEnvironment"
+            elif blue_env_name:
                 if desired_version_deployed_blue:
-                    event['nextState'] = 'Swap blue and green'
+                    # Swap blue and green
+                    event['blueEnvironmentName'] = blue_env_name
+                    event['greenEnvironmentName'] = green_env_name
+                    event['nextState'] = 'SwapEBSBlueGreen'
                 else:
-                    event['nextState'] = 'Deploy desired version to blue'
+                    # Deploy desired version to blue
+                    event['environmentName'] = blue_env_name
+                    event['nextState'] = 'DeployToEBSEnvironment'
             else:
-                event['nextState'] = 'Create blue env'
+                # Create blue environment
+                event['blueGreen'] = 'blue'
+                event['nextState'] = 'CreateEBSEnvironment'
     else:
+        # Create green environment
         event['blueGreen'] = 'green'
         event['nextState'] = 'CreateEBSEnvironment'
 
