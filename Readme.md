@@ -1,3 +1,5 @@
+Design documentation: https://docs.google.com/document/d/1wwOX-auBPwnyH8bhXa8eezz4OT_MA8bOZxkdSI-sHdE/edit?usp=sharing
+
 ## Requirements
 - Bash
 - jq
@@ -19,6 +21,3 @@
 - You will have to manually terminate any running Beanstalk environments.
 - You can then run `terraform destroy` and enter the last deployed app version when prompted.
 - If you are finished with the pipeline completely, you can go into the AWS console and delete the backend S3 bucket and DynamoDB table.
-
-
-Design documentation: https://docs.google.com/document/d/1wwOX-auBPwnyH8bhXa8eezz4OT_MA8bOZxkdSI-sHdE/edit?usp=sharing
