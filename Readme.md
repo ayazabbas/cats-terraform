@@ -3,7 +3,7 @@
 - jq
 - Zip
 - Terraform 0.12.5
-- AWS account with S3 bucket for Terraform state storage and DynamoDB table for state locking (edit [main.tf] (main.tf) accordingly)
+- AWS account with S3 bucket for Terraform state storage and DynamoDB table for state locking (edit [main.tf](main.tf) accordingly)
 - awscli with configured credentials (see https://www.terraform.io/docs/providers/aws/index.html for more info on credentials)
 
 ## Usage
